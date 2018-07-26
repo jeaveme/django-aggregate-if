@@ -162,3 +162,26 @@ class Max(Aggregate):
 class Min(Aggregate):
     name = 'Min'
     sql_klass = SqlMin
+
+
+class SqlConcat(SqlAggregate):
+    sql_function = 'GROUP_CONCAT'
+    sql_template = '%(function)s(%(distinct)s%(field)s%(ordering)s%(separator)s)'
+    conditional_template = '%(function)s(%(distinct)sCASE WHEN %(condition)s THEN %(field)s ELSE null END' \
+                           '%(ordering)s%(separator)s)'
+
+    def __init__(self, col, distinct=False, ordering=None, separator=None, **extra):
+        distinct = 'DISTINCT ' if distinct else ''
+        separator = ' SEPARATOR "%s"' % separator if separator else ''
+        ordering = ' ORDER BY %s' % ordering if ordering else ''
+
+        super(SqlConcat, self).__init__(col, distinct=distinct, ordering=ordering,
+                                        separator=separator, **extra)
+
+
+class Concat(Aggregate):
+    """
+    Usage: MyModel.objects.all().annotate(new_attribute=Concat('related__attribute', separator=':')
+    """
+    name = 'Concat'
+    sql_klass = SqlConcat
